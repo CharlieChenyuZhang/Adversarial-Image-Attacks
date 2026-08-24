@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "adversarial-image-attacks"
+version = "0.1.0"
+description = "Create bounded, guide-image perturbations for adversarial-image experiments."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.23",
+    "Pillow>=9.1",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7",
+]
+
+[project.scripts]
+advmerge = "adversarial_image_attacks.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+pythonpath = ["src"]
+testpaths = ["tests"]
