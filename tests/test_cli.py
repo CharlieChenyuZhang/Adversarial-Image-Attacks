@@ -3,6 +3,7 @@ from pathlib import Path
 import subprocess
 import sys
 
+import numpy as np
 from PIL import Image
 import pytest
 
@@ -60,7 +61,8 @@ def test_cli_accepts_fractional_epsilon_and_all_merge_options(tmp_path: Path) ->
     assert completed.returncode == 0, completed.stderr
     with Image.open(output_path) as merged:
         assert merged.size == (2, 2)
-        assert list(merged.convert("RGB").getdata()) == [(101, 101, 101)] * 4
+        pixels = np.asarray(merged.convert("RGB")).reshape(-1, 3).tolist()
+        assert pixels == [[101, 101, 101]] * 4
 
 
 def test_cli_refuses_collision_until_force_is_given(tmp_path: Path) -> None:

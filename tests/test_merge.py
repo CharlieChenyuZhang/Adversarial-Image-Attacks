@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import numpy as np
 import pytest
 from PIL import Image
 
@@ -16,8 +17,8 @@ def test_merge_images_moves_toward_guide_within_epsilon() -> None:
 
     assert merged.mode == "RGB"
     assert merged.size == base.size
-    assert list(merged.getdata()) == [(102, 98, 100)] * 4
-    assert list(base.getdata()) == [(100, 100, 100)] * 4
+    assert np.asarray(merged).reshape(-1, 3).tolist() == [[102, 98, 100]] * 4
+    assert np.asarray(base).reshape(-1, 3).tolist() == [[100, 100, 100]] * 4
 
 
 def test_zero_strength_returns_an_independent_copy_of_base() -> None:
@@ -30,7 +31,7 @@ def test_zero_strength_returns_an_independent_copy_of_base() -> None:
     assert merged is not base
     assert merged.mode == "RGB"
     assert merged.size == base.size
-    assert list(merged.getdata()) == list(base.getdata())
+    np.testing.assert_array_equal(np.asarray(merged), np.asarray(base))
 
 
 def test_strength_controls_unsaturated_blend() -> None:
@@ -151,7 +152,7 @@ def test_merge_files_writes_png_and_reports_normalized_deltas(tmp_path: Path) ->
     with Image.open(output_path) as merged:
         assert merged.format == "PNG"
         assert merged.mode == "RGB"
-        assert list(merged.getdata()) == [(102, 102, 102)] * 4
+        assert np.asarray(merged).reshape(-1, 3).tolist() == [[102, 102, 102]] * 4
 
 
 def test_fractional_epsilon_remains_strict_after_png_round_trip(

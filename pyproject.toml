@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "adversarial-image-attacks"
-version = "0.1.0"
+version = "0.2.0"
 description = "Create bounded, guide-image perturbations for adversarial-image experiments."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -14,12 +14,20 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+vision = [
+    "openai>=3.2,<4",
+]
+ui = [
+    "gradio>=6.24,<7",
+    "openai>=3.2,<4",
+]
 test = [
     "pytest>=7",
 ]
 
 [project.scripts]
 advmerge = "adversarial_image_attacks.cli:main"
+advmerge-ui = "adversarial_image_attacks.ui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
