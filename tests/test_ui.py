@@ -54,6 +54,77 @@ def test_generate_candidate_requires_both_images() -> None:
         generate_candidate(None, image, 1.0, 8, "cover")  # type: ignore[arg-type]
 
 
+def test_candidate_fingerprint_tracks_every_generation_input() -> None:
+    base = Image.new("RGB", (2, 2), "black")
+    guide = Image.new("RGB", (2, 2), "white")
+    fingerprint = ui_module._candidate_inputs_fingerprint(
+        base, guide, 1.0, 8, "cover"
+    )
+    changed_base = base.copy()
+    changed_base.putpixel((0, 0), (1, 0, 0))
+    changed_guide = guide.copy()
+    changed_guide.putpixel((0, 0), (254, 255, 255))
+
+    changed_inputs = [
+        (changed_base, guide, 1.0, 8, "cover"),
+        (base, changed_guide, 1.0, 8, "cover"),
+        (base, guide, 0.5, 8, "cover"),
+        (base, guide, 1.0, 9, "cover"),
+        (base, guide, 1.0, 8, "stretch"),
+    ]
+
+    for inputs in changed_inputs:
+        assert ui_module._candidate_inputs_fingerprint(*inputs) != fingerprint
+
+
+def test_candidate_fingerprint_tracks_palette_changes() -> None:
+    base = Image.new("P", (1, 1), 0)
+    guide = Image.new("RGB", (1, 1), "white")
+    base.putpalette([0, 0, 0] + [0, 0, 0] * 255)
+    fingerprint = ui_module._candidate_inputs_fingerprint(
+        base, guide, 1.0, 8, "cover"
+    )
+
+    base.putpalette([255, 0, 0] + [0, 0, 0] * 255)
+
+    assert (
+        ui_module._candidate_inputs_fingerprint(
+            base, guide, 1.0, 8, "cover"
+        )
+        != fingerprint
+    )
+
+
+def test_current_candidate_validation_rejects_changed_inputs() -> None:
+    base = Image.new("RGB", (2, 2), "black")
+    guide = Image.new("RGB", (2, 2), "white")
+    fingerprint = ui_module._candidate_inputs_fingerprint(
+        base, guide, 1.0, 8, "cover"
+    )
+
+    ui_module._require_current_candidate(
+        fingerprint, base, guide, 1.0, 8, "cover"
+    )
+
+    with pytest.raises(ValueError, match="重新生成候选图"):
+        ui_module._require_current_candidate(
+            fingerprint, base, guide, 1.0, 9, "cover"
+        )
+
+
+def test_current_candidate_validation_requires_generation() -> None:
+    image = Image.new("RGB", (1, 1))
+
+    with pytest.raises(ValueError, match="先使用当前参数生成候选图"):
+        ui_module._require_current_candidate(
+            "", image, image, 1.0, 8, "cover"
+        )
+
+
+def test_clear_candidate_state_removes_candidate_and_all_results() -> None:
+    assert ui_module._clear_candidate_state() == (None, "", "", "", "", "")
+
+
 def test_evaluate_candidate_formats_independent_results(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -134,7 +205,16 @@ def test_build_app_when_gradio_is_installed() -> None:
             "-c",
             (
                 "from adversarial_image_attacks.ui import build_app; "
-                "app = build_app(); assert app is not None; app.close()"
+                "app = build_app(); assert app is not None; "
+                "deps = app.config['dependencies']; "
+                "changes = [d for d in deps "
+                "if any(t[1] == 'change' for t in d['targets'])]; "
+                "assert len(changes) == 5; "
+                "assert all(d['queue'] is False for d in changes); "
+                "assert all(len(d['outputs']) == 6 for d in changes); "
+                "assert len(deps[0]['outputs']) == 6; "
+                "assert len(deps[1]['inputs']) == 11; "
+                "app.close()"
             ),
         ],
         cwd=project_root,

@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
+import secrets
 from typing import Optional, Sequence, Tuple
 
 import numpy as np
@@ -21,6 +24,81 @@ from .vision import (
 
 def _processed_base(base: Image.Image) -> Image.Image:
     return merge_images(base, base, strength=0.0, epsilon=1.0)
+
+
+def _candidate_inputs_fingerprint(
+    base: Image.Image,
+    guide: Image.Image,
+    strength: float,
+    epsilon_levels: float,
+    resize_mode: str,
+) -> str:
+    """Return a deterministic fingerprint for every candidate input."""
+
+    if not isinstance(base, Image.Image) or not isinstance(guide, Image.Image):
+        raise ValueError("请先上传 base image 和 guide image。")
+
+    digest = hashlib.sha256()
+    settings = json.dumps(
+        {
+            "strength": float(strength),
+            "epsilon_levels": float(epsilon_levels),
+            "resize_mode": resize_mode,
+        },
+        ensure_ascii=True,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    digest.update(len(settings).to_bytes(8, "big"))
+    digest.update(settings)
+
+    for image in (base, guide):
+        normalized = _processed_base(image)
+        metadata = json.dumps(
+            {
+                "mode": normalized.mode,
+                "size": normalized.size,
+            },
+            ensure_ascii=True,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        pixels = normalized.tobytes()
+        digest.update(len(metadata).to_bytes(8, "big"))
+        digest.update(metadata)
+        digest.update(len(pixels).to_bytes(8, "big"))
+        digest.update(pixels)
+
+    return digest.hexdigest()
+
+
+def _require_current_candidate(
+    generated_fingerprint: str,
+    base: Image.Image,
+    guide: Image.Image,
+    strength: float,
+    epsilon_levels: float,
+    resize_mode: str,
+) -> None:
+    """Reject a candidate generated from inputs that are no longer current."""
+
+    if not generated_fingerprint:
+        raise ValueError("请先使用当前参数生成候选图。")
+    current_fingerprint = _candidate_inputs_fingerprint(
+        base,
+        guide,
+        strength,
+        epsilon_levels,
+        resize_mode,
+    )
+    if not secrets.compare_digest(generated_fingerprint, current_fingerprint):
+        raise ValueError("生成参数或图片已经变化，请重新生成候选图后再评估。")
+
+
+def _clear_candidate_state() -> Tuple[None, str, str, str, str, str]:
+    """Clear a stale candidate, its fingerprint, and prior model results."""
+
+    return None, "", "", "", "", ""
 
 
 def generate_candidate(
@@ -182,7 +260,9 @@ def build_app():
 
     def generate_for_ui(*args):
         try:
-            return generate_candidate(*args)
+            candidate, summary = generate_candidate(*args)
+            fingerprint = _candidate_inputs_fingerprint(*args)
+            return candidate, summary, fingerprint, "", "", ""
         except Exception as exc:
             expected = isinstance(
                 exc, (TypeError, ValueError, VisionEvaluationError)
@@ -191,9 +271,36 @@ def build_app():
                 str(exc), print_exception=not expected
             ) from exc
 
-    def evaluate_for_ui(*args):
+    def evaluate_for_ui(
+        base,
+        candidate,
+        evaluation_prompt,
+        evaluation_target,
+        effort,
+        key,
+        generated_fingerprint,
+        guide,
+        candidate_strength,
+        candidate_epsilon,
+        candidate_resize_mode,
+    ):
         try:
-            return evaluate_candidate(*args)
+            _require_current_candidate(
+                generated_fingerprint,
+                base,
+                guide,
+                candidate_strength,
+                candidate_epsilon,
+                candidate_resize_mode,
+            )
+            return evaluate_candidate(
+                base,
+                candidate,
+                evaluation_prompt,
+                evaluation_target,
+                effort,
+                key,
+            )
         except Exception as exc:
             expected = isinstance(
                 exc, (TypeError, ValueError, VisionEvaluationError)
@@ -282,6 +389,7 @@ def build_app():
             base_result = gr.Markdown()
             candidate_result = gr.Markdown()
         verdict = gr.Markdown()
+        candidate_fingerprint = gr.State("")
         gr.Markdown(
             "隐私提示：API Key 不会写入仓库。"
             "图片输入会按照 OpenAI API 的数据与保留设置处理。"
@@ -291,7 +399,14 @@ def build_app():
         generate_button.click(
             fn=generate_for_ui,
             inputs=[base_image, guide_image, strength, epsilon, resize_mode],
-            outputs=[candidate_image, generation_summary],
+            outputs=[
+                candidate_image,
+                generation_summary,
+                candidate_fingerprint,
+                base_result,
+                candidate_result,
+                verdict,
+            ],
         )
         evaluate_button.click(
             fn=evaluate_for_ui,
@@ -302,9 +417,36 @@ def build_app():
                 target_label,
                 reasoning_effort,
                 api_key,
+                candidate_fingerprint,
+                guide_image,
+                strength,
+                epsilon,
+                resize_mode,
             ],
             outputs=[base_result, candidate_result, verdict],
         )
+
+        stale_outputs = [
+            candidate_image,
+            generation_summary,
+            candidate_fingerprint,
+            base_result,
+            candidate_result,
+            verdict,
+        ]
+        for candidate_input in (
+            base_image,
+            guide_image,
+            strength,
+            epsilon,
+            resize_mode,
+        ):
+            candidate_input.change(
+                fn=_clear_candidate_state,
+                inputs=None,
+                outputs=stale_outputs,
+                queue=False,
+            )
 
     return app
 
