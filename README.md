@@ -140,3 +140,7 @@ Merging two images this way produces a bounded adversarial candidate. It does no
 The UI evaluates multimodal vision behavior, not a text-only language model. It uses two independent OpenAI Responses API calls so that the candidate is not analyzed alongside the base image. A changed answer is an experimental signal, not proof of a robust attack. For targeted evaluation, define the target label before looking at the candidate result.
 
 Use this package only on models, data, and systems you own or are explicitly authorized to test. Follow applicable laws, policies, licenses, and research ethics requirements.
+
+## Generated experiment
+
+See the reproducible [cat-to-dog bounded merge experiment](examples/generated/cat-to-dog/README.md) for generated source images, four epsilon levels, pixel measurements, and a blind visual-model inspection.
