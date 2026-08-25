@@ -106,7 +106,7 @@ def test_current_candidate_validation_rejects_changed_inputs() -> None:
         fingerprint, base, guide, 1.0, 8, "cover"
     )
 
-    with pytest.raises(ValueError, match="重新生成候选图"):
+    with pytest.raises(ValueError, match="Generate a new candidate"):
         ui_module._require_current_candidate(
             fingerprint, base, guide, 1.0, 9, "cover"
         )
@@ -115,7 +115,7 @@ def test_current_candidate_validation_rejects_changed_inputs() -> None:
 def test_current_candidate_validation_requires_generation() -> None:
     image = Image.new("RGB", (1, 1))
 
-    with pytest.raises(ValueError, match="先使用当前参数生成候选图"):
+    with pytest.raises(ValueError, match="current settings first"):
         ui_module._require_current_candidate(
             "", image, image, 1.0, 8, "cover"
         )
@@ -152,7 +152,7 @@ def test_evaluate_candidate_formats_independent_results(
 
     assert "dog" in base_result
     assert "cat" in candidate_result
-    assert "成功信号" in verdict
+    assert "success signal" in verdict
     assert "gpt-5.6-sol" in verdict
 
 

@@ -13,8 +13,9 @@ from PIL import Image, ImageOps
 
 DEFAULT_MODEL = "gpt-5.6-sol"
 DEFAULT_PROMPT = (
-    "请独立识别这张图片的主要主体，并给出简短、客观的描述。"
-    "不要假设它是对抗样本，也不要参考其他图片。"
+    "Independently identify the main subject in this image and provide a brief, "
+    "objective description. Do not assume it is an adversarial example or refer "
+    "to any other image."
 )
 VALID_REASONING_EFFORTS = frozenset(
     {"none", "low", "medium", "high", "xhigh", "max"}
@@ -116,30 +117,32 @@ def _field(container: Any, name: str) -> Any:
 def _parse_analysis(response: Any) -> VisionAnalysis:
     output_text = _field(response, "output_text")
     if not isinstance(output_text, str) or not output_text.strip():
-        raise VisionEvaluationError("OpenAI 返回了空的图像分析结果。")
+        raise VisionEvaluationError("OpenAI returned an empty image analysis.")
 
     try:
         payload = json.loads(output_text)
     except json.JSONDecodeError as exc:
         raise VisionEvaluationError(
-            "OpenAI 返回的图像分析不是有效 JSON。"
+            "OpenAI returned image analysis that is not valid JSON."
         ) from exc
 
     if not isinstance(payload, dict):
-        raise VisionEvaluationError("OpenAI 返回的图像分析格式不正确。")
+        raise VisionEvaluationError("OpenAI returned an invalid image analysis format.")
 
     text_fields = ("label", "description", "target_reason")
     if any(not isinstance(payload.get(name), str) for name in text_fields):
-        raise VisionEvaluationError("OpenAI 返回的图像分析缺少文本字段。")
+        raise VisionEvaluationError("OpenAI image analysis is missing text fields.")
     if not isinstance(payload.get("target_match"), bool):
-        raise VisionEvaluationError("OpenAI 返回的 target_match 不是布尔值。")
+        raise VisionEvaluationError("OpenAI returned a non-boolean target_match value.")
 
     confidence = payload.get("confidence")
     if isinstance(confidence, bool) or not isinstance(confidence, (int, float)):
-        raise VisionEvaluationError("OpenAI 返回的 confidence 不是数值。")
+        raise VisionEvaluationError("OpenAI returned a non-numeric confidence value.")
     confidence_value = float(confidence)
     if not 0.0 <= confidence_value <= 1.0:
-        raise VisionEvaluationError("OpenAI 返回的 confidence 超出 0 到 1。")
+        raise VisionEvaluationError(
+            "OpenAI returned confidence outside the 0 to 1 range."
+        )
 
     usage = _field(response, "usage")
     return VisionAnalysis(
@@ -179,15 +182,16 @@ class OpenAIVisionEvaluator:
         key = (api_key or os.environ.get("OPENAI_API_KEY", "")).strip()
         if not key:
             raise VisionEvaluationError(
-                "没有找到 OpenAI API Key。请设置 OPENAI_API_KEY，"
-                "或在本地 UI 的密码输入框中填写。"
+                "No OpenAI API key was found. Set OPENAI_API_KEY or enter a key "
+                "in the local UI password field."
             )
 
         try:
             from openai import OpenAI
         except ImportError as exc:
             raise VisionEvaluationError(
-                "缺少 OpenAI SDK。请安装项目的 vision 或 ui 可选依赖。"
+                "The OpenAI SDK is not installed. Install the project's vision "
+                "or ui optional dependencies."
             ) from exc
         self._client = OpenAI(api_key=key)
 
@@ -208,19 +212,19 @@ class OpenAIVisionEvaluator:
             raise ValueError("prompt must be a non-empty string")
         target_value = target_label.strip() if isinstance(target_label, str) else ""
         target_instruction = (
-            f"目标标签是：{target_value}。"
-            "请判断图片是否在语义上匹配该目标。"
+            f"Target label: {target_value}. "
+            "Decide whether the image semantically matches this target."
             if target_value
-            else "没有提供目标标签。请将 target_match 设为 false。"
+            else "No target label was provided. Set target_match to false."
         )
 
         try:
             response = self._client.responses.create(
                 model=self.model,
                 instructions=(
-                    "你是一个严格的图像分类评估器。"
-                    "独立分析当前图片，"
-                    "并按照提供的 JSON Schema 返回结果。"
+                    "You are a strict image-classification evaluator. Analyze only "
+                    "the current image and return a result that follows the provided "
+                    "JSON Schema. Write all string fields in English."
                 ),
                 input=[
                     {
@@ -254,7 +258,7 @@ class OpenAIVisionEvaluator:
         except VisionEvaluationError:
             raise
         except Exception as exc:
-            raise VisionEvaluationError(f"OpenAI 请求失败：{exc}") from exc
+            raise VisionEvaluationError(f"OpenAI request failed: {exc}") from exc
 
         return _parse_analysis(response)
 

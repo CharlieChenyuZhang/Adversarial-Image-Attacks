@@ -36,7 +36,7 @@ def _candidate_inputs_fingerprint(
     """Return a deterministic fingerprint for every candidate input."""
 
     if not isinstance(base, Image.Image) or not isinstance(guide, Image.Image):
-        raise ValueError("请先上传 base image 和 guide image。")
+        raise ValueError("Upload both a base image and a guide image.")
 
     digest = hashlib.sha256()
     settings = json.dumps(
@@ -83,7 +83,7 @@ def _require_current_candidate(
     """Reject a candidate generated from inputs that are no longer current."""
 
     if not generated_fingerprint:
-        raise ValueError("请先使用当前参数生成候选图。")
+        raise ValueError("Generate a candidate with the current settings first.")
     current_fingerprint = _candidate_inputs_fingerprint(
         base,
         guide,
@@ -92,7 +92,10 @@ def _require_current_candidate(
         resize_mode,
     )
     if not secrets.compare_digest(generated_fingerprint, current_fingerprint):
-        raise ValueError("生成参数或图片已经变化，请重新生成候选图后再评估。")
+        raise ValueError(
+            "The images or generation settings changed. "
+            "Generate a new candidate before evaluation."
+        )
 
 
 def _clear_candidate_state() -> Tuple[None, str, str, str, str, str]:
@@ -111,12 +114,15 @@ def generate_candidate(
     """Generate an image and a Markdown summary for the local UI."""
 
     if base is None or guide is None:
-        raise ValueError("请先上传 base image 和 guide image。")
+        raise ValueError("Upload both a base image and a guide image.")
     if not isinstance(base, Image.Image) or not isinstance(guide, Image.Image):
-        raise ValueError("请输入 PNG、JPEG、WEBP 等位图格式，暂不支持 SVG。")
+        raise ValueError(
+            "Use a bitmap image such as PNG, JPEG, or WebP. "
+            "SVG is not supported."
+        )
     epsilon_value = float(epsilon_levels)
     if not 0.0 <= epsilon_value <= 255.0:
-        raise ValueError("epsilon 必须在 0 到 255 个像素级别之间。")
+        raise ValueError("epsilon must be between 0 and 255 pixel levels.")
 
     candidate = merge_images(
         base,
@@ -132,13 +138,13 @@ def generate_candidate(
     maximum = int(delta.max(initial=0))
     mean = float(delta.mean()) if delta.size else 0.0
     summary = (
-        "### 生成完成\n"
-        f"- 输出尺寸：`{candidate.width} × {candidate.height}`\n"
-        f"- 最大通道变化：`{maximum}/255`\n"
-        f"- 平均通道变化：`{mean:.2f}/255`\n"
-        f"- 请求的 epsilon：`{epsilon_value:g}/255`\n\n"
-        "候选图不等于已证明的攻击成功。"
-        "请继续运行下方模型对比。"
+        "### Candidate ready\n"
+        f"- Output size: `{candidate.width} × {candidate.height}`\n"
+        f"- Maximum channel change: `{maximum}/255`\n"
+        f"- Mean channel change: `{mean:.2f}/255`\n"
+        f"- Requested epsilon: `{epsilon_value:g}/255`\n\n"
+        "This is only a candidate. Run the model comparison below to "
+        "measure whether the label changed."
     )
     return candidate, summary
 
@@ -160,19 +166,19 @@ def _markdown_text(value: str) -> str:
 
 
 def _analysis_markdown(title: str, analysis: VisionAnalysis) -> str:
-    token_text = "不可用"
+    token_text = "Unavailable"
     if analysis.input_tokens is not None or analysis.output_tokens is not None:
         token_text = (
-            f"输入 {analysis.input_tokens or 0}，"
-            f"输出 {analysis.output_tokens or 0}"
+            f"input {analysis.input_tokens or 0}, "
+            f"output {analysis.output_tokens or 0}"
         )
     return (
         f"### {title}\n"
-        f"- 主要标签：**{_markdown_text(analysis.label)}**\n"
-        f"- 置信度：`{analysis.confidence:.2f}`\n"
-        f"- 匹配目标：`{'是' if analysis.target_match else '否'}`\n"
-        f"- 目标判断：{_markdown_text(analysis.target_reason)}\n"
-        f"- Token：{token_text}\n\n"
+        f"- Primary label: **{_markdown_text(analysis.label)}**\n"
+        f"- Confidence: `{analysis.confidence:.2f}`\n"
+        f"- Matches target: `{'Yes' if analysis.target_match else 'No'}`\n"
+        f"- Target reasoning: {_markdown_text(analysis.target_reason)}\n"
+        f"- Tokens: {token_text}\n\n"
         f"{_markdown_text(analysis.description)}"
     )
 
@@ -183,38 +189,38 @@ def _verdict_markdown(
     target = target_label.strip()
     if target:
         if comparison.targeted_success:
-            verdict = "定向攻击判定：成功信号"
-            detail = "原图不匹配目标，而候选图匹配目标。"
+            verdict = "Targeted result: success signal"
+            detail = "The base did not match the target, but the candidate did."
         elif comparison.base.target_match:
-            verdict = "定向攻击判定：无法成立"
+            verdict = "Targeted result: inconclusive"
             detail = (
-                "原图已经匹配目标，"
-                "不能把候选图匹配视为攻击造成。"
+                "The base already matched the target, so a candidate match "
+                "cannot be attributed to the perturbation."
             )
         else:
-            verdict = "定向攻击判定：未成功"
-            detail = "候选图没有被模型判断为目标标签。"
+            verdict = "Targeted result: no success"
+            detail = "The model did not match the candidate to the target."
     else:
         verdict = (
-            "非定向变化信号：标签发生变化"
+            "Untargeted signal: label changed"
             if comparison.label_changed
-            else "非定向变化信号：标签未变化"
+            else "Untargeted signal: label unchanged"
         )
         detail = (
-            "未提供目标标签，因此这里只能比较独立输出，"
-            "不能证明定向攻击。"
+            "No target label was provided, so this comparison cannot "
+            "establish a targeted attack."
         )
 
     return (
-        "### 对比结论\n"
+        "### Comparison\n"
         f"**{verdict}**\n\n"
         f"{detail}\n\n"
-        f"- 模型：`{model}`\n"
-        f"- 原图标签：{_markdown_text(comparison.base.label)}\n"
-        f"- 候选图标签：{_markdown_text(comparison.candidate.label)}\n"
-        f"- 标签是否变化：`{'是' if comparison.label_changed else '否'}`\n\n"
-        "单次大模型回答存在随机性。"
-        "严谨实验应重复多次并预先定义成功标准。"
+        f"- Model: `{model}`\n"
+        f"- Base label: {_markdown_text(comparison.base.label)}\n"
+        f"- Candidate label: {_markdown_text(comparison.candidate.label)}\n"
+        f"- Label changed: `{'Yes' if comparison.label_changed else 'No'}`\n\n"
+        "A single model response is stochastic. Repeat the experiment and "
+        "define the success rule before reviewing the results."
     )
 
 
@@ -229,9 +235,9 @@ def evaluate_candidate(
     """Evaluate base and candidate independently with GPT-5.6 Sol."""
 
     if base is None or candidate is None:
-        raise ValueError("请先上传原图并生成候选图。")
+        raise ValueError("Upload a base image and generate a candidate first.")
     if not isinstance(base, Image.Image) or not isinstance(candidate, Image.Image):
-        raise ValueError("模型评估只支持位图格式，暂不支持 SVG。")
+        raise ValueError("Model evaluation supports bitmap images, not SVG.")
     evaluator = OpenAIVisionEvaluator(api_key=api_key or None, model=DEFAULT_MODEL)
     comparison = evaluator.compare(
         _processed_base(base),
@@ -241,8 +247,8 @@ def evaluate_candidate(
         reasoning_effort=reasoning_effort,
     )
     return (
-        _analysis_markdown("原图分析", comparison.base),
-        _analysis_markdown("候选图分析", comparison.candidate),
+        _analysis_markdown("Base analysis", comparison.base),
+        _analysis_markdown("Candidate analysis", comparison.candidate),
         _verdict_markdown(comparison, target_label, evaluator.model),
     )
 
@@ -254,7 +260,7 @@ def build_app():
         import gradio as gr
     except ImportError as exc:
         raise RuntimeError(
-            "缺少 UI 依赖。请使用 Python 3.10+ 运行："
+            "UI dependencies are missing. With Python 3.10+, run: "
             "python -m pip install -e '.[ui]'"
         ) from exc
 
@@ -314,17 +320,18 @@ def build_app():
     ) as app:
         gr.Markdown(
             "# Adversarial Image Lab\n"
-            "上传两张图片，生成有界候选图，"
-            "然后用 GPT-5.6 Sol 独立比较原图和候选图。"
+            "Upload a base and guide image, create a bounded candidate, "
+            "then compare the base and candidate independently with "
+            "GPT-5.6 Sol."
         )
         with gr.Row():
             base_image = gr.Image(
-                label="Base image（希望保持视觉内容的原图）",
+                label="Base image (content to preserve)",
                 type="pil",
                 image_mode=None,
             )
             guide_image = gr.Image(
-                label="Guide image（扰动方向或目标图）",
+                label="Guide image (perturbation direction)",
                 type="pil",
                 image_mode=None,
             )
@@ -341,14 +348,14 @@ def build_app():
                 maximum=64,
                 value=8,
                 step=1,
-                label="Epsilon（像素级别，8 表示 8/255）",
+                label="Epsilon (pixel levels; 8 means 8/255)",
             )
             resize_mode = gr.Dropdown(
                 choices=["cover", "stretch"],
                 value="cover",
                 label="Guide resize mode",
             )
-        generate_button = gr.Button("1. 生成候选图", variant="primary")
+        generate_button = gr.Button("1. Generate candidate", variant="primary")
         with gr.Row():
             candidate_image = gr.Image(
                 label="Adversarial candidate",
@@ -359,20 +366,20 @@ def build_app():
             )
             generation_summary = gr.Markdown()
 
-        gr.Markdown("## OpenAI 视觉模型对比")
+        gr.Markdown("## OpenAI vision comparison")
         gr.Markdown(
-            f"固定模型：`{DEFAULT_MODEL}`。只有点击下方对比按钮时，"
-            "原图和候选图才会发送到 OpenAI。"
+            f"Fixed model: `{DEFAULT_MODEL}`. The images are sent to OpenAI "
+            "only when you click the comparison button."
         )
         prompt = gr.Textbox(
-            label="评估问题",
+            label="Evaluation prompt",
             value=DEFAULT_PROMPT,
             lines=3,
         )
         with gr.Row():
             target_label = gr.Textbox(
-                label="目标标签（可选，例如 dog）",
-                placeholder="留空则只检测标签是否发生变化",
+                label="Target label (optional, for example dog)",
+                placeholder="Leave blank to check only whether the label changes",
             )
             reasoning_effort = gr.Dropdown(
                 choices=["low", "medium", "high"],
@@ -380,20 +387,20 @@ def build_app():
                 label="Reasoning effort",
             )
             api_key = gr.Textbox(
-                label="OpenAI API Key（可选）",
-                placeholder="留空则读取 OPENAI_API_KEY",
+                label="OpenAI API key (optional)",
+                placeholder="Leave blank to use OPENAI_API_KEY",
                 type="password",
             )
-        evaluate_button = gr.Button("2. 用 GPT-5.6 Sol 独立对比")
+        evaluate_button = gr.Button("2. Compare with GPT-5.6 Sol")
         with gr.Row():
             base_result = gr.Markdown()
             candidate_result = gr.Markdown()
         verdict = gr.Markdown()
         candidate_fingerprint = gr.State("")
         gr.Markdown(
-            "隐私提示：API Key 不会写入仓库。"
-            "图片输入会按照 OpenAI API 的数据与保留设置处理。"
-            "请只测试你有权使用的图片和模型。"
+            "Privacy: the API key is not written to the repository. Image "
+            "inputs follow your OpenAI API data and retention settings. "
+            "Test only images and models you are authorized to use."
         )
 
         generate_button.click(
