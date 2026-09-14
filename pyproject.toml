@@ -24,6 +24,11 @@ ui = [
 test = [
     "pytest>=7",
 ]
+attack = [
+    "scikit-image>=0.19",
+    "torch>=2.1,<3",
+    "torchvision>=0.16,<1",
+]
 
 [project.scripts]
 advmerge = "adversarial_image_attacks.cli:main"

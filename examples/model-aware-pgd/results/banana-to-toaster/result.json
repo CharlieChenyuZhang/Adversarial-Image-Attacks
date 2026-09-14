@@ -1,0 +1,130 @@
+{
+  "success_after_png_roundtrip": true,
+  "output_role": "adversarial",
+  "files": {
+    "input_source": {
+      "path": "examples/model-aware-pgd/inputs/banana-generated.png",
+      "sha256": "6f297bf2d15f5a534e9ec2bd6dcc0c03fa96d5a3712647fa59c61cf1e01afaf4"
+    },
+    "clean_png": {
+      "path": "examples/model-aware-pgd/results/banana-to-toaster/clean.png",
+      "sha256": "c6aeb0d920e19aff9656d8cfdb18e3cc492b8c556a645b04daffd2e822a2c686"
+    },
+    "output_png": {
+      "path": "examples/model-aware-pgd/results/banana-to-toaster/adversarial-eps-1.png",
+      "sha256": "83028adb6698fcb21ef902ab63d023a18f90c15a0c734b257a9a1b7583aa3763"
+    },
+    "comparison_png": {
+      "path": "examples/model-aware-pgd/results/banana-to-toaster/comparison.png",
+      "sha256": "3ed218306eedd516f58157131ac40698fbefc4848237437bdd845437be3b41c7"
+    }
+  },
+  "model": "torchvision.models.resnet18",
+  "weights": "ResNet18_Weights.IMAGENET1K_V1",
+  "weights_sha256": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+  "target": {
+    "index": 859,
+    "label": "toaster"
+  },
+  "clean_top5": [
+    {
+      "index": 954,
+      "label": "banana",
+      "probability": 0.9987090826034546
+    },
+    {
+      "index": 951,
+      "label": "lemon",
+      "probability": 0.000762671697884798
+    },
+    {
+      "index": 940,
+      "label": "spaghetti squash",
+      "probability": 0.00015049337525852025
+    },
+    {
+      "index": 986,
+      "label": "yellow lady's slipper",
+      "probability": 9.039980795932934e-05
+    },
+    {
+      "index": 942,
+      "label": "butternut squash",
+      "probability": 7.460869528586045e-05
+    }
+  ],
+  "output_top5": [
+    {
+      "index": 859,
+      "label": "toaster",
+      "probability": 0.30242687463760376
+    },
+    {
+      "index": 725,
+      "label": "pitcher",
+      "probability": 0.06656773388385773
+    },
+    {
+      "index": 941,
+      "label": "acorn squash",
+      "probability": 0.05976695194840431
+    },
+    {
+      "index": 883,
+      "label": "vase",
+      "probability": 0.05914480239152908
+    },
+    {
+      "index": 940,
+      "label": "spaghetti squash",
+      "probability": 0.04161708056926727
+    }
+  ],
+  "target_probability_clean": 9.109290405318049e-11,
+  "target_probability_output": 0.30242687463760376,
+  "target_margin_after_png_roundtrip": 1.5136194229125977,
+  "selected_epsilon_levels": 1,
+  "requested_epsilon_levels": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "tested_epsilon_levels": [
+    1
+  ],
+  "steps": 100,
+  "restarts": 3,
+  "seed": 20260914,
+  "device": "mps",
+  "preprocessing": "RGB, resize short side to 256, center crop to 224, uint8 PNG, normalize only during inference",
+  "pixel_metrics_after_png_roundtrip": {
+    "linf_levels": 1,
+    "linf_normalized": 0.00392156862745098,
+    "mean_absolute_delta_levels": 0.7290935905612245,
+    "changed_channels": 109749,
+    "total_channels": 150528,
+    "psnr_db": 49.50297080484887,
+    "ssim": 0.9913673013583882
+  },
+  "attempts": [
+    {
+      "epsilon_levels": 1,
+      "success_before_png_roundtrip": true,
+      "target_margin": 1.5136194229125977,
+      "optimization_margin": 1.5136194229125977,
+      "top1": {
+        "index": 859,
+        "label": "toaster",
+        "probability": 0.30242687463760376
+      }
+    }
+  ],
+  "environment": {
+    "python": "3.9.13",
+    "torch": "2.1.2",
+    "torchvision": "0.16.2",
+    "pillow": "10.4.0",
+    "numpy": "1.24.3"
+  }
+}

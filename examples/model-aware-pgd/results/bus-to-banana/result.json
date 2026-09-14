@@ -1,0 +1,142 @@
+{
+  "success_after_png_roundtrip": true,
+  "output_role": "adversarial",
+  "files": {
+    "input_source": {
+      "path": "examples/model-aware-pgd/inputs/double-decker-bus-generated.png",
+      "sha256": "07fbd63e820355c6cb15506c5d6f59d92dea9ff5ce4d4157a5bd500f303078e5"
+    },
+    "clean_png": {
+      "path": "examples/model-aware-pgd/results/bus-to-banana/clean.png",
+      "sha256": "2896c4ede3cb479d9b7568dc151b1ed71f7ff7c2ec82f7ed53edc2e32ed3bad2"
+    },
+    "output_png": {
+      "path": "examples/model-aware-pgd/results/bus-to-banana/adversarial-eps-2.png",
+      "sha256": "addc5e5b69f6a447809816f1985f6a06f11328dc60b883afeb34929271ce68f8"
+    },
+    "comparison_png": {
+      "path": "examples/model-aware-pgd/results/bus-to-banana/comparison.png",
+      "sha256": "823ead59ec1c9d6d7e6cc258315300efc8b29fd792daba3c0ed1f3ea47757d9c"
+    }
+  },
+  "model": "torchvision.models.resnet18",
+  "weights": "ResNet18_Weights.IMAGENET1K_V1",
+  "weights_sha256": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+  "target": {
+    "index": 954,
+    "label": "banana"
+  },
+  "clean_top5": [
+    {
+      "index": 705,
+      "label": "passenger car",
+      "probability": 0.6042688488960266
+    },
+    {
+      "index": 874,
+      "label": "trolleybus",
+      "probability": 0.2755553424358368
+    },
+    {
+      "index": 654,
+      "label": "minibus",
+      "probability": 0.08389076590538025
+    },
+    {
+      "index": 779,
+      "label": "school bus",
+      "probability": 0.01055576466023922
+    },
+    {
+      "index": 829,
+      "label": "streetcar",
+      "probability": 0.00416872464120388
+    }
+  ],
+  "output_top5": [
+    {
+      "index": 954,
+      "label": "banana",
+      "probability": 0.19809067249298096
+    },
+    {
+      "index": 705,
+      "label": "passenger car",
+      "probability": 0.040346916764974594
+    },
+    {
+      "index": 950,
+      "label": "orange",
+      "probability": 0.03814626485109329
+    },
+    {
+      "index": 580,
+      "label": "greenhouse",
+      "probability": 0.034198690205812454
+    },
+    {
+      "index": 725,
+      "label": "pitcher",
+      "probability": 0.02870911918580532
+    }
+  ],
+  "target_probability_clean": 4.196908776066266e-06,
+  "target_probability_output": 0.19809067249298096,
+  "target_margin_after_png_roundtrip": 1.591209888458252,
+  "selected_epsilon_levels": 2,
+  "requested_epsilon_levels": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "tested_epsilon_levels": [
+    1,
+    2
+  ],
+  "steps": 100,
+  "restarts": 3,
+  "seed": 20260914,
+  "device": "mps",
+  "preprocessing": "RGB, resize short side to 256, center crop to 224, uint8 PNG, normalize only during inference",
+  "pixel_metrics_after_png_roundtrip": {
+    "linf_levels": 2,
+    "linf_normalized": 0.00784313725490196,
+    "mean_absolute_delta_levels": 1.4545998086734695,
+    "changed_channels": 109538,
+    "total_channels": 150528,
+    "psnr_db": 43.49423879014273,
+    "ssim": 0.9871098108257258
+  },
+  "attempts": [
+    {
+      "epsilon_levels": 1,
+      "success_before_png_roundtrip": false,
+      "target_margin": -2.094555377960205,
+      "optimization_margin": -2.094555377960205,
+      "top1": {
+        "index": 705,
+        "label": "passenger car",
+        "probability": 0.1428653597831726
+      }
+    },
+    {
+      "epsilon_levels": 2,
+      "success_before_png_roundtrip": true,
+      "target_margin": 1.591209888458252,
+      "optimization_margin": 1.591209888458252,
+      "top1": {
+        "index": 954,
+        "label": "banana",
+        "probability": 0.19809067249298096
+      }
+    }
+  ],
+  "environment": {
+    "python": "3.9.13",
+    "torch": "2.1.2",
+    "torchvision": "0.16.2",
+    "pillow": "10.4.0",
+    "numpy": "1.24.3"
+  }
+}

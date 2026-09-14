@@ -1,0 +1,14 @@
+[
+  {
+    "file": "banana-generated.png",
+    "prompt": "Use case: product-mockup\nAsset type: controlled adversarial-classification test input\nPrimary request: a photorealistic single ripe yellow banana\nScene/backdrop: seamless neutral light-gray studio background\nSubject: exactly one whole banana, fully visible, centered, no stickers\nStyle/medium: clean realistic DSLR product photograph with natural peel texture\nComposition/framing: square image, object fills about 65 percent of the frame, simple front three-quarter view\nLighting/mood: soft even studio lighting, natural color, gentle grounded shadow\nConstraints: one banana only, no other fruit, no hands, no text, no logo, no watermark"
+  },
+  {
+    "file": "acoustic-guitar-generated.png",
+    "prompt": "Use case: product-mockup\nAsset type: controlled adversarial-classification test input\nPrimary request: a photorealistic wooden acoustic guitar\nScene/backdrop: seamless neutral light-gray studio background\nSubject: exactly one full acoustic guitar standing upright, centered, all edges visible\nStyle/medium: clean realistic DSLR product photograph with visible wood grain and metal strings\nComposition/framing: square image, guitar fills about 75 percent of the frame, straight-on view\nLighting/mood: soft even studio lighting, natural color, gentle grounded shadow\nConstraints: one guitar only, no stand, no person, no text, no logo, no watermark"
+  },
+  {
+    "file": "double-decker-bus-generated.png",
+    "prompt": "Use case: product-mockup\nAsset type: controlled adversarial-classification test input\nPrimary request: a photorealistic red double-decker bus\nScene/backdrop: simple empty paved road with a soft neutral-gray studio-like background\nSubject: exactly one red double-decker bus, fully visible, centered, front three-quarter view\nStyle/medium: clean realistic transport photograph with detailed windows, tires, and metal body\nComposition/framing: square image, bus fills about 70 percent of frame\nLighting/mood: soft daylight, neutral color balance, clear silhouette\nConstraints: one bus only, no people, no other vehicles, no readable route text, no logos, no watermark"
+  }
+]

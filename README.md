@@ -77,6 +77,13 @@ It was not an official OpenAI API evaluation.
 See the [full experiment](examples/generated/cat-to-dog/README.md) for prompts,
 measurements, images, and reproduction steps.
 
+## Model-aware example
+
+The [targeted PGD examples](examples/model-aware-pgd/README.md) attack one exact
+ResNet-18 model without blending a guide image. Three saved PNGs changed the
+model's top-1 class with maximum per-channel changes of only `1/255` or `2/255`.
+The results were rechecked after PNG reload and CPU inference.
+
 ## Limits and responsible use
 
 Attack success depends on the model, preprocessing, prompt, objective, and

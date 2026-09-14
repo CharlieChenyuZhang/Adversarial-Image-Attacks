@@ -1,0 +1,142 @@
+{
+  "success_after_png_roundtrip": true,
+  "output_role": "adversarial",
+  "files": {
+    "input_source": {
+      "path": "examples/model-aware-pgd/inputs/acoustic-guitar-generated.png",
+      "sha256": "e404a02094bd482aba478aadb85715b9cd89f699ec425781a4c7f97e7b8b4afa"
+    },
+    "clean_png": {
+      "path": "examples/model-aware-pgd/results/guitar-to-golden-retriever/clean.png",
+      "sha256": "1b8c2783ceb8078504c69a4884a1060798b3282eed66ab1fdff5b7a08f6310a0"
+    },
+    "output_png": {
+      "path": "examples/model-aware-pgd/results/guitar-to-golden-retriever/adversarial-eps-2.png",
+      "sha256": "f3a4167604c0712cce8e03f120669f3519dd019a43747b4b305aebc73f01fd57"
+    },
+    "comparison_png": {
+      "path": "examples/model-aware-pgd/results/guitar-to-golden-retriever/comparison.png",
+      "sha256": "5b65ae6904934a8fa361418bdfde7c9f51f8e50a6d4c4a2cbbd9f58e0226f793"
+    }
+  },
+  "model": "torchvision.models.resnet18",
+  "weights": "ResNet18_Weights.IMAGENET1K_V1",
+  "weights_sha256": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+  "target": {
+    "index": 207,
+    "label": "golden retriever"
+  },
+  "clean_top5": [
+    {
+      "index": 402,
+      "label": "acoustic guitar",
+      "probability": 0.9989733695983887
+    },
+    {
+      "index": 546,
+      "label": "electric guitar",
+      "probability": 0.0008630485972389579
+    },
+    {
+      "index": 420,
+      "label": "banjo",
+      "probability": 0.00015880638966336846
+    },
+    {
+      "index": 714,
+      "label": "pick",
+      "probability": 4.659151272790041e-06
+    },
+    {
+      "index": 889,
+      "label": "violin",
+      "probability": 5.774099065547489e-08
+    }
+  ],
+  "output_top5": [
+    {
+      "index": 207,
+      "label": "golden retriever",
+      "probability": 0.4296557903289795
+    },
+    {
+      "index": 257,
+      "label": "Great Pyrenees",
+      "probability": 0.07693083584308624
+    },
+    {
+      "index": 402,
+      "label": "acoustic guitar",
+      "probability": 0.032777007669210434
+    },
+    {
+      "index": 296,
+      "label": "ice bear",
+      "probability": 0.030342483893036842
+    },
+    {
+      "index": 219,
+      "label": "cocker spaniel",
+      "probability": 0.027333039790391922
+    }
+  ],
+  "target_probability_clean": 8.654537962747132e-15,
+  "target_probability_output": 0.4296557903289795,
+  "target_margin_after_png_roundtrip": 1.7200775146484375,
+  "selected_epsilon_levels": 2,
+  "requested_epsilon_levels": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "tested_epsilon_levels": [
+    1,
+    2
+  ],
+  "steps": 100,
+  "restarts": 3,
+  "seed": 20260914,
+  "device": "mps",
+  "preprocessing": "RGB, resize short side to 256, center crop to 224, uint8 PNG, normalize only during inference",
+  "pixel_metrics_after_png_roundtrip": {
+    "linf_levels": 2,
+    "linf_normalized": 0.00784313725490196,
+    "mean_absolute_delta_levels": 1.4038717049319729,
+    "changed_channels": 105663,
+    "total_channels": 150528,
+    "psnr_db": 43.647270545770155,
+    "ssim": 0.9655906823611237
+  },
+  "attempts": [
+    {
+      "epsilon_levels": 1,
+      "success_before_png_roundtrip": false,
+      "target_margin": -4.958377838134766,
+      "optimization_margin": -4.958377838134766,
+      "top1": {
+        "index": 402,
+        "label": "acoustic guitar",
+        "probability": 0.6899822950363159
+      }
+    },
+    {
+      "epsilon_levels": 2,
+      "success_before_png_roundtrip": true,
+      "target_margin": 1.7200775146484375,
+      "optimization_margin": 1.7200775146484375,
+      "top1": {
+        "index": 207,
+        "label": "golden retriever",
+        "probability": 0.4296557903289795
+      }
+    }
+  ],
+  "environment": {
+    "python": "3.9.13",
+    "torch": "2.1.2",
+    "torchvision": "0.16.2",
+    "pillow": "10.4.0",
+    "numpy": "1.24.3"
+  }
+}
